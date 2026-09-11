@@ -12,14 +12,14 @@ use OpenTelemetry\API\Trace\StatusCode;
 
 use function OpenTelemetry\Instrumentation\hook;
 
-use Wojtek2105\OpenTelemetryWebman\InstrumentationConfig;
-use Wojtek2105\OpenTelemetryWebman\RequestTraceState;
 use Throwable;
 use Webman\App;
 use Webman\Context as WebmanContext;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\Route\Route;
+use Wojtek2105\OpenTelemetryWebman\InstrumentationConfig;
+use Wojtek2105\OpenTelemetryWebman\RequestTraceState;
 use Workerman\Coroutine\Context as WorkermanContext;
 
 final class WebmanRequestHook
