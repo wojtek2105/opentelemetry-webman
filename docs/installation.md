@@ -63,15 +63,17 @@ OTEL_TRACES_SAMPLER_ARG=1.0
 `1.0` is convenient in development. Use a lower value in production, for
 example `0.1`, unless tail sampling is performed in the collector.
 
-Long-running workers should export ended spans continuously. Start with:
+Use the batch processor so OTLP network I/O does not block every request:
 
 ```dotenv
-OTEL_PHP_TRACES_PROCESSOR=simple
+OTEL_PHP_TRACES_PROCESSOR=batch
 ```
 
-After correctness is verified, benchmark the batch processor for the deployed
-runtime. Always restart all Workerman workers after changing instrumentation or
-OTel environment variables.
+With very low traffic a batch can appear in Tempo after another request or when
+the worker shuts down. The `simple` processor is useful only for debugging
+export correctness because it synchronously exports every ended span and has a
+much larger latency cost. Always restart all Workerman workers after changing
+instrumentation or OTel environment variables.
 
 ## Avoid duplicate eBPF spans
 
