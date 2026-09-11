@@ -1,0 +1,73 @@
+{
+  "name": "wojtek2105/opentelemetry-webman",
+  "description": "Coroutine-safe OpenTelemetry instrumentation and tracing SDK for Webman and Workerman.",
+  "type": "library",
+  "license": "GPL-3.0-only",
+  "keywords": [
+    "opentelemetry",
+    "otel",
+    "tracing",
+    "webman",
+    "workerman",
+    "swoole",
+    "coroutine"
+  ],
+  "require": {
+    "php": "^8.2",
+    "ext-opentelemetry": "*",
+    "ext-swoole": "*",
+    "open-telemetry/api": "^1.3",
+    "open-telemetry/context": "^1.3",
+    "open-telemetry/context-swoole": "^1.0",
+    "open-telemetry/exporter-otlp": "^1.3",
+    "open-telemetry/sdk": "^1.3",
+    "open-telemetry/sem-conv": "^1.32",
+    "workerman/webman-framework": "^2.1"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "monolog/monolog": "^3.0",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5 || ^12.0"
+  },
+  "suggest": {
+    "ext-protobuf": "Makes OTLP protobuf export substantially faster.",
+    "monolog/monolog": "Adds trace_id and span_id correlation to logs with TraceContextProcessor.",
+    "mismatch/opentelemetry-auto-redis": "Adds automatic spans for PhpRedis and Predis commands.",
+    "open-telemetry/opentelemetry-auto-pdo": "Adds automatic spans for PDO queries.",
+    "open-telemetry/opentelemetry-auto-curl": "Adds automatic spans and propagation for curl requests."
+  },
+  "autoload": {
+    "psr-4": {
+      "Wojtek2105\\OpenTelemetryWebman\\": "src/"
+    },
+    "files": [
+      "_register.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Wojtek2105\\OpenTelemetryWebman\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "check": [
+      "@validate",
+      "@test",
+      "@analyse"
+    ],
+    "validate": "composer validate --strict",
+    "test": "phpunit",
+    "analyse": "phpstan analyse",
+    "cs-check": "php-cs-fixer fix --dry-run --diff",
+    "cs-fix": "php-cs-fixer fix"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
