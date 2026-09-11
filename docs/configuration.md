@@ -3,6 +3,10 @@
 The standard OpenTelemetry PHP variables configure the SDK, exporter, resource,
 propagators and sampling. This package adds only Webman-specific switches.
 
+Set `OTEL_SDK_DISABLED=true` before the worker starts to disable tracing with
+the lowest possible runtime overhead. The Webman observer hooks are then not
+registered; changing this variable requires restarting the workers.
+
 | Variable | Default | Description |
 | --- | --- | --- |
 | `OTEL_WEBMAN_EXCLUDED_PATHS` | `/health,/metrics` | Comma-separated exact paths; a trailing `*` matches a prefix. |

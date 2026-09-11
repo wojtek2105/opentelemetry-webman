@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Wojtek2105\OpenTelemetryWebman;
 
 use InvalidArgumentException;
-use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Instrumentation\CachedInstrumentation;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -14,6 +14,8 @@ use Throwable;
 final class Telemetry
 {
     public const SCOPE_NAME = 'app.webman';
+
+    private static ?CachedInstrumentation $instrumentation = null;
 
     /**
      * Execute a callback inside a child span and always close its scope.
@@ -57,16 +59,18 @@ final class Telemetry
             throw new InvalidArgumentException('A span name must not be empty.');
         }
 
-        $builder = Globals::tracerProvider()
-            ->getTracer(self::SCOPE_NAME)
+        $builder = self::instrumentation()
+            ->tracer()
             ->spanBuilder($name)
             ->setSpanKind($kind);
 
-        foreach ($attributes as $attribute => $value) {
-            $builder->setAttribute($attribute, $value);
-        }
-
         $span = $builder->startSpan();
+
+        if ($span->isRecording()) {
+            foreach ($attributes as $attribute => $value) {
+                $span->setAttribute($attribute, $value);
+            }
+        }
 
         return new ActiveSpan($span, $span->activate());
     }
@@ -108,5 +112,10 @@ final class Telemetry
         $context = self::currentSpan()->getContext();
 
         return $context->isValid() ? $context->getSpanId() : null;
+    }
+
+    private static function instrumentation(): CachedInstrumentation
+    {
+        return self::$instrumentation ??= new CachedInstrumentation(self::SCOPE_NAME);
     }
 }

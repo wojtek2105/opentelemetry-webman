@@ -24,6 +24,16 @@ Webman App::send() begins
         └── Webman destroys coroutine context
 ```
 
+PDO, Redis and outgoing HTTP instrumentations do not need a special "child
+span" API. Every OpenTelemetry span becomes a child when it is started while
+the Webman server span (or a custom business span) is active. The single-trace
+waterfall in Tempo is authoritative for this relationship.
+
+Grafana's **Service structure** search view aggregates multiple traces by their
+shape. A standalone PDO or Redis structure means that the operation ran without
+an active HTTP request, for example in a CLI command, readiness check, timer or
+background worker. It does not detach dependency spans in request traces.
+
 Starting before `Context::reset()` would lose the request state. Ending after
 `Context::destroy()` would lose the active parent. This ordering is also why a
 generic PHP-FPM middleware implementation is insufficient for this runtime.
@@ -34,6 +44,14 @@ generic PHP-FPM middleware implementation is insufficient for this runtime.
 native Swoole coroutine switches. Each concurrent request therefore has its own
 active root span even though many requests execute inside one long-running PHP
 worker.
+
+## Hot path
+
+When `OTEL_SDK_DISABLED=true`, the package does not install observer hooks. For
+an unsampled request it still creates and activates a non-recording span so that
+trace context can be propagated correctly, but skips request, route and response
+attribute collection. Tracers are cached through OpenTelemetry's
+`CachedInstrumentation` helper.
 
 ## Failure behavior
 

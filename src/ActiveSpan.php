@@ -6,6 +6,7 @@ namespace Wojtek2105\OpenTelemetryWebman;
 
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\Context\ScopeInterface;
 use Throwable;
 
 final class ActiveSpan
@@ -14,7 +15,7 @@ final class ActiveSpan
 
     public function __construct(
         private readonly SpanInterface $span,
-        private readonly object $scope,
+        private readonly ScopeInterface $scope,
     ) {}
 
     public function span(): SpanInterface
@@ -62,9 +63,7 @@ final class ActiveSpan
         }
 
         try {
-            if (method_exists($this->scope, 'detach')) {
-                $this->scope->detach();
-            }
+            $this->scope->detach();
         } finally {
             $this->span->end();
         }

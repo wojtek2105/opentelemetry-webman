@@ -38,12 +38,17 @@ final class WebmanRequestHook
                 }
 
                 $request = $params[0][Request::class] ?? null;
-                if (!$request instanceof Request || $config->excludes($request->path())) {
+                if (!$request instanceof Request) {
+                    return;
+                }
+
+                $path = $request->path();
+                if ($config->excludes($path)) {
                     return;
                 }
 
                 try {
-                    self::startRequest($instrumentation, $config, $request);
+                    self::startRequest($instrumentation, $config, $request, $path);
                 } catch (Throwable) {
                     // Instrumentation must never change application behavior.
                 }
@@ -68,31 +73,39 @@ final class WebmanRequestHook
         CachedInstrumentation $instrumentation,
         InstrumentationConfig $config,
         Request $request,
+        string $path,
     ): void {
         $parent = Globals::propagator()->extract($request->header());
         $method = strtoupper($request->method());
 
-        $builder = $instrumentation->tracer()
+        $span = $instrumentation->tracer()
             ->spanBuilder('HTTP ' . $method)
             ->setParent($parent)
             ->setSpanKind(SpanKind::KIND_SERVER)
-            ->setAttribute('http.request.method', $method)
-            ->setAttribute('url.path', $request->path())
-            ->setAttribute('network.protocol.version', $request->protocolVersion())
-            ->setAttribute('server.address', $request->host(true))
-            ->setAttribute('server.port', $request->getLocalPort())
-            ->setAttribute('user_agent.original', $request->header('user-agent'));
+            ->startSpan();
 
-        if ($config->captureClientAddress) {
-            $builder->setAttribute('client.address', $request->getRemoteIp());
-            $builder->setAttribute('client.port', $request->getRemotePort());
+        if ($span->isRecording()) {
+            $span->setAttribute('http.request.method', $method);
+            $span->setAttribute('url.path', $path);
+            $span->setAttribute('network.protocol.version', $request->protocolVersion());
+            $span->setAttribute('server.address', $request->host(true));
+            $span->setAttribute('server.port', $request->getLocalPort());
+
+            $userAgent = $request->header('user-agent');
+            if (is_string($userAgent)) {
+                $span->setAttribute('user_agent.original', $userAgent);
+            }
+
+            if ($config->captureClientAddress) {
+                $span->setAttribute('client.address', $request->getRemoteIp());
+                $span->setAttribute('client.port', $request->getRemotePort());
+            }
+
+            if ($config->captureUrlQuery) {
+                $span->setAttribute('url.full', $request->fullUrl());
+            }
         }
 
-        if ($config->captureUrlQuery) {
-            $builder->setAttribute('url.full', $request->fullUrl());
-        }
-
-        $span = $builder->startSpan();
         $scope = $span->activate();
         WebmanContext::set(RequestTraceState::class, new RequestTraceState($span, $scope));
     }
@@ -105,6 +118,10 @@ final class WebmanRequestHook
         }
 
         try {
+            if (!$state->span->isRecording()) {
+                return;
+            }
+
             if ($request instanceof Request) {
                 self::addRouteAttributes($state, $request);
             }

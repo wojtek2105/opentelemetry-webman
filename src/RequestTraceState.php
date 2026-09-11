@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wojtek2105\OpenTelemetryWebman;
 
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\Context\ScopeInterface;
 
 final class RequestTraceState
 {
@@ -12,7 +13,7 @@ final class RequestTraceState
 
     public function __construct(
         public readonly SpanInterface $span,
-        private readonly object $scope,
+        private readonly ScopeInterface $scope,
     ) {}
 
     public function end(): void
@@ -24,9 +25,7 @@ final class RequestTraceState
         $this->ended = true;
 
         try {
-            if (method_exists($this->scope, 'detach')) {
-                $this->scope->detach();
-            }
+            $this->scope->detach();
         } finally {
             $this->span->end();
         }

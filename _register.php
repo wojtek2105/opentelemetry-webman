@@ -9,7 +9,7 @@ if (!extension_loaded('opentelemetry')) {
     return;
 }
 
-if (class_exists(Sdk::class) && Sdk::isInstrumentationDisabled(WebmanInstrumentation::NAME)) {
+if (class_exists(Sdk::class) && (Sdk::isDisabled() || Sdk::isInstrumentationDisabled(WebmanInstrumentation::NAME))) {
     return;
 }
 
